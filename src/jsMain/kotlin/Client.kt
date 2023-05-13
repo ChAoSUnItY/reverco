@@ -3,11 +3,8 @@ import react.create
 import react.dom.client.createRoot
 
 fun main() {
-    val container = document.createElement("div")
-    document.body!!.appendChild(container)
+    kotlinext.js.require("./app.css")
 
-    val welcome = Welcome.create {
-        bytecode = mutableListOf()
-    }
-    createRoot(container).render(welcome)
+    val welcome = RevercoView.create()
+    createRoot(document.body!!).render(welcome)
 }

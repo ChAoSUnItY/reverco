@@ -1,5 +1,8 @@
+import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
+
 plugins {
-    kotlin("multiplatform") version "1.7.20"
+    kotlin("multiplatform") version "1.8.21"
+    kotlin("plugin.serialization") version "1.8.21"
     application
 }
 
@@ -26,13 +29,17 @@ kotlin {
         browser {
             commonWebpackConfig {
                 cssSupport {
-                    enabled = true
+                    enabled.set(true)
                 }
             }
         }
     }
     sourceSets {
-        val commonMain by getting
+        val commonMain by getting {
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
+            }
+        }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
@@ -40,6 +47,8 @@ kotlin {
         }
         val jvmMain by getting {
             dependencies {
+                implementation("org.ow2.asm:asm-tree:9.5")
+
                 implementation("io.ktor:ktor-server-netty:2.0.2")
                 implementation("io.ktor:ktor-server-html-builder-jvm:2.0.2")
                 implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.2")
@@ -51,6 +60,13 @@ kotlin {
                 implementation("org.jetbrains.kotlin-wrappers:kotlin-react:18.2.0-pre.346")
                 implementation("org.jetbrains.kotlin-wrappers:kotlin-react-dom:18.2.0-pre.346")
                 implementation("org.jetbrains.kotlin-wrappers:kotlin-emotion:11.9.3-pre.346")
+
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
+
+                implementation(npm("postcss", "8.4.23"))
+                implementation(npm("postcss-loader", "7.3.0")) // 5.0.0 seems not to work
+                implementation(npm("autoprefixer", "10.4.14"))
+                implementation(npm("tailwindcss", "3.3.2"))
             }
         }
         val jsTest by getting
@@ -58,6 +74,7 @@ kotlin {
         all {
             languageSettings {
                 optIn("kotlin.ExperimentalUnsignedTypes")
+                optIn("kotlinx.serialization.ExperimentalSerializationApi")
             }
         }
     }
@@ -75,4 +92,23 @@ tasks.named<Copy>("jvmProcessResources") {
 tasks.named<JavaExec>("run") {
     dependsOn(tasks.named<Jar>("jvmJar"))
     classpath(tasks.named<Jar>("jvmJar"))
+}
+
+val copyTailwindConfig = tasks.register<Copy>("copyTailwindConfig") {
+    from("./tailwind.config.js")
+    into("${rootProject.buildDir}/js/packages/${rootProject.name}")
+
+    dependsOn(":kotlinNpmInstall")
+}
+
+val copyPostcssConfig = tasks.register<Copy>("copyPostcssConfig") {
+    from("./postcss.config.js")
+    into("${rootProject.buildDir}/js/packages/${rootProject.name}")
+
+    dependsOn(":kotlinNpmInstall")
+}
+
+tasks.named("processResources") {
+    dependsOn(copyTailwindConfig)
+    dependsOn(copyPostcssConfig)
 }

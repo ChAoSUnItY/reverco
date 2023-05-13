@@ -1,6 +1,7 @@
 package chaos.unity.application
 
-import io.ktor.http.HttpStatusCode
+import chaos.unity.application.bytecode.serializeClass
+import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.html.*
@@ -13,44 +14,35 @@ import kotlinx.html.*
 
 fun HTML.index() {
     head {
-        title("Hello from Ktor!")
+        title("Reverco")
     }
     body {
-        div {
-            +"Hello from Ktor"
-        }
         script(src = "/static/reverco.js") {}
     }
 }
 
 fun main() {
-    embeddedServer(Netty, port = 8080, host = "127.0.0.1", module = Application::myApplicationModule).start(wait = true)
+    embeddedServer(Netty, port = 8080, host = "127.0.0.1", module = Application::revercoModule).start(wait = true)
 }
 
-fun Application.myApplicationModule() {
+fun Application.revercoModule() {
     routing {
         get("/") {
             call.respondHtml(HttpStatusCode.OK, HTML::index)
         }
         post("/submit")  {
-            val bytecode = call.receive<ByteArray>().map { it.toInt() and 0xFF }
+            println(call.request.headers["Content-Type"])
 
-            println(bytecode.slice(0 until 4))
-            println(bytecode.slice(0 until 4) == arrayOf(0xCA, 0xFE, 0xBA, 0xBE))
-            println(bytecode[0] == 0xCA)
-            println(bytecode[0])
-            println(0xCA)
+            if (call.request.headers["Content-Type"] == "application/octet-stream") {
+                val bytecode = call.receive<ByteArray>()
+                val classStructure = serializeClass(bytecode)
 
-            call.respondRedirect("/success")
-        }
-        get("/success") {
-            call.respondHtml {
-                body {
-                    h1 {
-                        +"KEK"
-                    }
+                if (classStructure != null) {
+                    call.respond(HttpStatusCode.OK, classStructure)
                 }
             }
+
+            call.respondText("Invalid data", status = HttpStatusCode.Forbidden)
         }
         static("/static") {
             resources()
