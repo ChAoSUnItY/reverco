@@ -2,6 +2,7 @@ import csstype.*
 import kotlinx.browser.window
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromDynamic
+import kotlinx.serialization.json.encodeToDynamic
 import org.khronos.webgl.ArrayBuffer
 import org.khronos.webgl.Uint8Array
 import org.w3c.fetch.RequestInit
@@ -10,18 +11,14 @@ import org.w3c.files.FileReader
 import org.w3c.files.get
 import react.FC
 import react.Props
-import react.dom.aria.ariaDescribedBy
 import react.dom.aria.ariaHidden
 import react.dom.html.InputType
 import react.dom.html.ReactHTML
-import react.dom.html.ReactHTML.button
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.input
 import react.dom.html.ReactHTML.label
 import react.dom.html.ReactHTML.p
-import react.dom.html.ReactHTML.span
 import react.dom.svg.ReactSVG
-import react.dom.svg.ReactSVG.path
 import react.dom.svg.ReactSVG.svg
 import react.dom.svg.StrokeLinecap
 import react.dom.svg.StrokeLinejoin
@@ -135,18 +132,23 @@ val ClassFileInput = FC<ClassFileInputProps> { props ->
 
                     onChange = { event ->
                         val fr = FileReader()
+                        val file = event.target.files?.get(0)
 
                         fr.onload = {
                             Promise { resolve, _ ->
                                 resolve(Uint8Array(fr.result as ArrayBuffer))
                             }.then {
+                                val name = file!!.name
+                                val bytes = it.unsafeCast<ByteArray>()
+                                val data = ClassFileData(name ,bytes)
+
                                 window.fetch(
                                     "submit", RequestInit(
                                         method = "POST",
                                         headers = json(
                                             "Content-Type" to "application/octet-stream"
                                         ),
-                                        body = it
+                                        body = Json.encodeToDynamic(data)
                                     )
                                 ).then { res ->
                                     val classStructure = Json.decodeFromDynamic<ClassStructure>(res.body)
@@ -155,10 +157,14 @@ val ClassFileInput = FC<ClassFileInputProps> { props ->
                                     println(classStructure)
 
                                     props.onSubmit(it.unsafeCast<ByteArray>().toList(), classStructure)
+                                }.catch { err ->
+                                    err.printStackTrace()
                                 }
+                            }.catch { err ->
+                                err.printStackTrace()
                             }
                         }
-                        fr.readAsArrayBuffer(event.target.files?.get(0) as Blob)
+                        fr.readAsArrayBuffer(file as Blob)
                     }
                 }
             }

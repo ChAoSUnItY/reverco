@@ -1,14 +1,24 @@
 package chaos.unity.application.bytecode
 
 import ClassStructure
-import org.objectweb.asm.ClassReader
-import org.objectweb.asm.tree.ClassNode
+import org.apache.bcel.classfile.ClassParser
+import toBytes
+import java.io.ByteArrayInputStream
 
-fun serializeClass(bytes: ByteArray): ClassStructure? {
-    val reader = ClassReader(bytes)
-    val classNode = ClassNode()
+fun serializeClass(className: String, bytes: ByteArray): ClassStructure? {
+    val classParser = ClassParser(ByteArrayInputStream(bytes), className)
 
-    reader.accept(classNode, 0)
+    return try {
+        val classFile = classParser.parse()
 
-    return ClassStructure()
+        ClassStructure(
+            classFile.minor.toBytes(),
+            classFile.major.toBytes(),
+            classFile.constantPool.length.toBytes(),
+        )
+    } catch (e: Exception) {
+        e.printStackTrace()
+
+        null
+    }
 }

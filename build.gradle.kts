@@ -47,11 +47,16 @@ kotlin {
         }
         val jvmMain by getting {
             dependencies {
-                implementation("org.ow2.asm:asm-tree:9.5")
+                // For resolving purpose
+                implementation("org.ow2.asm:asm:9.5")
+                // For parsing purpose
+                implementation("org.apache.bcel:bcel:6.7.0")
 
                 implementation("io.ktor:ktor-server-netty:2.0.2")
                 implementation("io.ktor:ktor-server-html-builder-jvm:2.0.2")
                 implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.2")
+                implementation("io.ktor:ktor-server-content-negotiation:2.0.2")
+                implementation("io.ktor:ktor-serialization-kotlinx-json:2.0.2")
             }
         }
         val jvmTest by getting
