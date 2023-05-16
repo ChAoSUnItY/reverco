@@ -8,10 +8,14 @@ import java.io.ByteArrayInputStream
 fun serializeClass(className: String, bytes: ByteArray): ClassStructure? {
     val classParser = ClassParser(ByteArrayInputStream(bytes), className)
 
-    return try {
+    try {
+        println(classParser)
+        
         val classFile = classParser.parse()
 
-        ClassStructure(
+        println(classFile)
+        
+        return ClassStructure(
             classFile.minor.toBytes(),
             classFile.major.toBytes(),
             classFile.constantPool.length.toBytes(),
@@ -19,6 +23,6 @@ fun serializeClass(className: String, bytes: ByteArray): ClassStructure? {
     } catch (e: Exception) {
         e.printStackTrace()
 
-        null
+        return null
     }
 }

@@ -13,6 +13,7 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.util.Identity.decode
 import kotlinx.html.*
 import kotlinx.serialization.json.Json
 
@@ -31,31 +32,33 @@ fun main() {
 
 fun Application.revercoModule() {
     install(ContentNegotiation) {
-        json(Json {
-            prettyPrint = true
-            isLenient = true
-        })
+        json()
     }
 
     routing {
         get("/") {
             call.respondHtml(HttpStatusCode.OK, HTML::index)
         }
-        post("/submit") {
-            println(call.request.headers["Content-Type"])
+        route("/parse") {
+            accept(ContentType.Application.Json) {
+                post {
+                    try {
+                        val data = call.receive<ClassFileData>()
 
-            if (call.request.headers["Content-Type"] == "application/octet-stream") {
-                val data = call.receive<ClassFileData>()
-                val classStructure = serializeClass(data.fileName, data.bytes)
+                        println(data)
 
-                println(classStructure)
+                        val classStructure = serializeClass(data.fileName, data.bytes.toByteArray())
 
-                if (classStructure != null) {
-                    call.respond(HttpStatusCode.OK, classStructure)
+                        println(classStructure)
+
+                        if (classStructure != null) {
+                            call.respond(HttpStatusCode.OK, classStructure)
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                 }
             }
-
-            call.respondText("Invalid data", status = HttpStatusCode.Forbidden)
         }
         static("/static") {
             resources()

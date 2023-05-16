@@ -1,14 +1,12 @@
-import csstype.*
-import kotlinx.browser.window
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.decodeFromDynamic
-import kotlinx.serialization.json.encodeToDynamic
+import csstype.ClassName
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 import org.khronos.webgl.ArrayBuffer
 import org.khronos.webgl.Uint8Array
-import org.w3c.fetch.RequestInit
 import org.w3c.files.Blob
 import org.w3c.files.FileReader
 import org.w3c.files.get
+import react.ChildrenBuilder
 import react.FC
 import react.Props
 import react.dom.aria.ariaHidden
@@ -23,8 +21,8 @@ import react.dom.svg.ReactSVG.svg
 import react.dom.svg.StrokeLinecap
 import react.dom.svg.StrokeLinejoin
 import react.useState
-import kotlin.js.Promise
-import kotlin.js.json
+
+private val scope = MainScope()
 
 val RevercoView = FC<Props> { _ ->
     var bytecode by useState(listOf<Byte>())
@@ -68,6 +66,16 @@ val RevercoView = FC<Props> { _ ->
                 onSubmit = { resolvedBytecode, resolvedStructure ->
                     bytecode = resolvedBytecode
                     classStructure = resolvedStructure
+                }
+                
+                div {
+                    +"KEK"
+                }
+            }
+
+            if (classStructure != null) {
+                ClassStructureView {
+                    this.classStructure = classStructure as ClassStructure
                 }
             }
         }
@@ -135,33 +143,18 @@ val ClassFileInput = FC<ClassFileInputProps> { props ->
                         val file = event.target.files?.get(0)
 
                         fr.onload = {
-                            Promise { resolve, _ ->
-                                resolve(Uint8Array(fr.result as ArrayBuffer))
-                            }.then {
-                                val name = file!!.name
-                                val bytes = it.unsafeCast<ByteArray>()
-                                val data = ClassFileData(name ,bytes)
+                            val name = file!!.name
+                            val bytes =
+                                Uint8Array(fr.result as ArrayBuffer).unsafeCast<ByteArray>().map(Byte::toByte).toList()
 
-                                window.fetch(
-                                    "submit", RequestInit(
-                                        method = "POST",
-                                        headers = json(
-                                            "Content-Type" to "application/octet-stream"
-                                        ),
-                                        body = Json.encodeToDynamic(data)
-                                    )
-                                ).then { res ->
-                                    val classStructure = Json.decodeFromDynamic<ClassStructure>(res.body)
+                            println(bytes)
 
-                                    println(res.status)
-                                    println(classStructure)
+                            scope.launch {
+                                val classStructure = requestClassFileParsing(name, bytes)
 
-                                    props.onSubmit(it.unsafeCast<ByteArray>().toList(), classStructure)
-                                }.catch { err ->
-                                    err.printStackTrace()
-                                }
-                            }.catch { err ->
-                                err.printStackTrace()
+                                println(classStructure)
+
+                                props.onSubmit(bytes, classStructure)
                             }
                         }
                         fr.readAsArrayBuffer(file as Blob)
@@ -170,4 +163,12 @@ val ClassFileInput = FC<ClassFileInputProps> { props ->
             }
         }
     }
+}
+
+external interface ClassStructureProps : Props {
+    var classStructure: ClassStructure
+}
+
+val ClassStructureView = FC<ClassStructureProps> { props ->
+    
 }

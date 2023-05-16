@@ -15,6 +15,8 @@ repositories {
 }
 
 kotlin {
+    val ktorVersion = "2.3.0"
+    
     jvm {
         compilations.all {
             kotlinOptions.jvmTarget = "1.8"
@@ -38,6 +40,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
+                implementation("io.ktor:ktor-client-core:$ktorVersion")
             }
         }
         val commonTest by getting {
@@ -52,11 +55,11 @@ kotlin {
                 // For parsing purpose
                 implementation("org.apache.bcel:bcel:6.7.0")
 
-                implementation("io.ktor:ktor-server-netty:2.0.2")
-                implementation("io.ktor:ktor-server-html-builder-jvm:2.0.2")
+                implementation("io.ktor:ktor-server-netty:$ktorVersion")
+                implementation("io.ktor:ktor-server-html-builder-jvm:$ktorVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.2")
-                implementation("io.ktor:ktor-server-content-negotiation:2.0.2")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:2.0.2")
+                implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
+                implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
             }
         }
         val jvmTest by getting
@@ -66,6 +69,9 @@ kotlin {
                 implementation("org.jetbrains.kotlin-wrappers:kotlin-react-dom:18.2.0-pre.346")
                 implementation("org.jetbrains.kotlin-wrappers:kotlin-emotion:11.9.3-pre.346")
 
+                implementation("io.ktor:ktor-client-js:$ktorVersion")
+                implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
+                implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
 
                 implementation(npm("postcss", "8.4.23"))
@@ -80,6 +86,7 @@ kotlin {
             languageSettings {
                 optIn("kotlin.ExperimentalUnsignedTypes")
                 optIn("kotlinx.serialization.ExperimentalSerializationApi")
+                optIn("kotlin.contracts.ExperimentalContracts")
             }
         }
     }
@@ -117,3 +124,7 @@ tasks.named("processResources") {
     dependsOn(copyTailwindConfig)
     dependsOn(copyPostcssConfig)
 }
+dependencies {
+    implementation("io.ktor:ktor-client-okhttp-jvm:2.3.0")
+}
+ 
